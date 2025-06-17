@@ -29,5 +29,6 @@ jobs:
           diffscan \
           --fossid-host ${{ secrets.FOSSID_HOST }} \
           --fossid-token ${{ secrets.FOSSID_TOKEN }} \
+          --vsf-mode new \
           --github-workflow-errors \
           --fail
