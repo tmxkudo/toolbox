@@ -1,0 +1,33 @@
+name: FossID Scanning
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  #push:
+  #  branches: [ add_feature5 ]
+  pull_request:
+  #  branches: [ develop ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  # workflow_dispatch:
+
+jobs:
+  run-fossid-diffscan:
+    name: FossID Annotate PR
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/fossid/fossid-toolbox:latest
+      credentials:
+        username: ${{ secrets.QUAY_USERNAME }}
+        password: ${{ secrets.QUAY_PASSWORD }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run fossid diffscan
+        run: |
+          fossid \
+          diffscan \
+          --fossid-host ${{ secrets.FOSSID_HOST }} \
+          --fossid-token ${{ secrets.FOSSID_TOKEN }} \
+          --github-workflow-errors \
+          --fail
