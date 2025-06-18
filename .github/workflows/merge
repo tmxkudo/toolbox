@@ -1,0 +1,17 @@
+name: Merged
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Run a sample script on PR merge
+      if: github.event.pull_request.merged == true
+      run: echo "This is a sample script that runs when a PR is merged."
