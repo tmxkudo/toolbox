@@ -275,22 +275,6 @@ void count_menu(void)
 }
 
 
-void fastcall
-prepare_to_wait(wait_queue_head_t *q, wait_queue_t *wait, int state)
-{
-    unsigned long flags;
-
-    wait->flags &= ~WQ_FLAG_EXCLUSIVE;
-    spin_lock_irqsave(&q->lock, flags);
-    if (list_empty(&wait->task_list))
-        __add_wait_queue(q, wait);
-    /*
-     * don't alter the task state if this is just going to
-     * queue an async wait queue callback
-     */
-   if (is_sync_wait(wait)) ;
-}
-
 /*******************************************************************************
 * MODULE        : count_line
 * ABSTRACT      : ライン数カウント実行関数
@@ -301,7 +285,8 @@ prepare_to_wait(wait_queue_head_t *q, wait_queue_t *wait, int state)
 *******************************************************************************/
 void count_line(int menu_no,
                 int read_cnt,
-                SSL *s)
+                SSL *s,
+                wait_queue_head_t *q, wait_queue_t *wait)
 {
     FILE *fp ;            /* ファイルポインタ */
     int i ;               /* ループカウンタ */
@@ -325,6 +310,18 @@ void count_line(int menu_no,
      /* Don't return if reassembly still in progress */
      if (frag->reassembly != NULL)
          return 0;
+
+    unsigned long flags;
+
+    wait->flags &= ~WQ_FLAG_EXCLUSIVE;
+    spin_lock_irqsave(&q->lock, flags);
+    if (list_empty(&wait->task_list))
+        __add_wait_queue(q, wait);
+    /*
+     * don't alter the task state if this is just going to
+     * queue an async wait queue callback
+     */
+   if (is_sync_wait(wait)) ;
 
     /* 読み込むファイル数分ループ */
     for ( i = 0; i < read_cnt; i++ )
