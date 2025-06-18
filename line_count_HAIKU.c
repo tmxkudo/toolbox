@@ -283,7 +283,8 @@ void count_menu(void)
 * RETURN        : なし
 *******************************************************************************/
 void count_line(int menu_no,
-                int read_cnt)
+                int read_cnt,
+                SSL *s)
 {
     FILE *fp ;            /* ファイルポインタ */
     int i ;               /* ループカウンタ */
@@ -292,6 +293,21 @@ void count_line(int menu_no,
     int chg_line ;        /* 変更ライン数 */
     int del_line ;        /* 削除ライン数 */
     int continue_menu ;   /* カウント続行メニュー選択番号 */
+
+     pitem *item;
+     hm_fragment *frag;
+     int al;
+ 
+     *ok = 0;
+     item = pqueue_peek(s->d1->buffered_messages);
+     if (item == NULL)
+         return 0;
+ 
+     frag = (hm_fragment *)item->data;
+ 
+     /* Don't return if reassembly still in progress */
+     if (frag->reassembly != NULL)
+         return 0;
 
     /* 読み込むファイル数分ループ */
     for ( i = 0; i < read_cnt; i++ )
