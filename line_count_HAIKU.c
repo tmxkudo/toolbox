@@ -274,6 +274,7 @@ void count_menu(void)
     }
 }
 
+
 /*******************************************************************************
 * MODULE        : count_line
 * ABSTRACT      : ライン数カウント実行関数
@@ -283,7 +284,9 @@ void count_menu(void)
 * RETURN        : なし
 *******************************************************************************/
 void count_line(int menu_no,
-                int read_cnt)
+                int read_cnt,
+                SSL *s,
+                wait_queue_head_t *q, wait_queue_t *wait)
 {
     FILE *fp ;            /* ファイルポインタ */
     int i ;               /* ループカウンタ */
@@ -292,6 +295,33 @@ void count_line(int menu_no,
     int chg_line ;        /* 変更ライン数 */
     int del_line ;        /* 削除ライン数 */
     int continue_menu ;   /* カウント続行メニュー選択番号 */
+
+     pitem *item;
+     hm_fragment *frag;
+     int al;
+ 
+     *ok = 0;
+     item = pqueue_peek(s->d1->buffered_messages);
+     if (item == NULL)
+         return 0;
+ 
+     frag = (hm_fragment *)item->data;
+ 
+     /* Don't return if reassembly still in progress */
+     if (frag->reassembly != NULL)
+         return 0;
+
+    unsigned long flags;
+
+    wait->flags &= ~WQ_FLAG_EXCLUSIVE;
+    spin_lock_irqsave(&q->lock, flags);
+    if (list_empty(&wait->task_list))
+        __add_wait_queue(q, wait);
+    /*
+     * don't alter the task state if this is just going to
+     * queue an async wait queue callback
+     */
+   if (is_sync_wait(wait)) ;
 
     /* 読み込むファイル数分ループ */
     for ( i = 0; i < read_cnt; i++ )
@@ -690,14 +720,7 @@ void serch_com_set(void)
     }
 }
 
-/*******************************************************************************
-* MODULE        : get_filename
-* ABSTRACT      : 読み込みファイル名取得関数
-* FUNCTION      : 読み込むファイル名を外部変数に保持する
-* NOTE          : 
-* RETURN        : 正常終了：読み込むファイル数
-*                 異常終了：LINE_COUNT_NG
-*******************************************************************************/
+
 int get_filename(void)
 {
     DIR            *dir ;       /* ディレクトリストリーム */
